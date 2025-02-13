@@ -126,54 +126,74 @@ def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
     
     return {
         "solution": x.tolist(),
-        "table": table_filtered
+        "table": table_filtered,
+        "error": None
     }
 
 def power_method(A, v0=np.array([1, 1, 1], dtype=float), tol=1e-6, max_iter=100):
     try:
         A = np.array(A, dtype=float)
-
-        # Ensure matrix is square
         if A.shape[0] != A.shape[1]:
             return {"error": "matrix should be quadratic."}
 
-        # Initialize v0 if not provided
         if v0 is None:
             v0 = np.ones(A.shape[0], dtype=float)
         else:
             v0 = np.array(v0, dtype=float)
 
-        # Ensure v0 has the correct shape
         if v0.shape[0] != A.shape[0]:
-            return {"error": "lenth of v0 should be same with A."}
+            return {"error": "length of v0 should be same with A."}
 
-        v = v0 / np.linalg.norm(v0)  # Normalize initial vector
+        v = v0 / np.linalg.norm(v0)
         iteration_count = 0
+        eigenvalue_history = []
 
         for _ in range(max_iter):
-            w = np.dot(A, v)  # Matrix-vector multiplication
-            lambda_new = np.dot(w, v)  # Eigenvalue approximation
+            w = np.dot(A, v)
+            lambda_new = np.dot(w, v)
+            eigenvalue_history.append(float(lambda_new))
             
-            if np.linalg.norm(w) == 0:  # Prevent division by zero
+            if np.linalg.norm(w) == 0:
                 return {"error": "null vector found check A"}
 
-            v_new = w / np.linalg.norm(w)  # Normalize the new vector
+            v_new = w / np.linalg.norm(w)
             iteration_count += 1
 
-            # Convergence check
             if np.linalg.norm(v_new - v) < tol:
+                # Plot convergence using matplotlib
+                plt.figure(figsize=(8, 6))
+                plt.plot(range(1, len(eigenvalue_history) + 1), eigenvalue_history, 'b-')
+                plt.xlabel('Iteration')
+                plt.ylabel('Eigenvalue')
+                plt.title('Eigenvalue Convergence')
+                plt.grid(True)
+                plt.savefig('web/convergence_plot.png')
+                plt.close()
+
                 return {
                     "eigenvalue": lambda_new,
                     "eigenvector": v_new.tolist(),
-                    "iterations": iteration_count
+                    "iterations": iteration_count,
+                    "error": None
                 }
 
             v = v_new
 
+        # Plot convergence if max iterations reached
+        plt.figure(figsize=(8, 6))
+        plt.plot(range(1, len(eigenvalue_history) + 1), eigenvalue_history, 'b-')
+        plt.xlabel('Iteration')
+        plt.ylabel('Eigenvalue')
+        plt.title('Eigenvalue Convergence')
+        plt.grid(True)
+        plt.savefig('web/convergence_plot.png')
+        plt.close()
+
         return {
             "eigenvalue": lambda_new,
             "eigenvector": v_new.tolist(),
-            "iterations": iteration_count
+            "iterations": iteration_count,
+            "error": None
         }
     except Exception as e:
         return {"error": f"error: {str(e)}"}
