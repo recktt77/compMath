@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,21 +12,51 @@
             text-align: center;
             padding: 20px;
         }
-        select, input, button {
+
+        select,
+        input,
+        button {
             margin: 10px;
             padding: 5px;
             font-size: 16px;
         }
+
         .hidden {
             display: none;
         }
+
         #plot {
             max-width: 100%;
             margin-top: 20px;
             display: none;
         }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .result-container {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
     </style>
 </head>
+
 <body>
     <h2>Select a Task:</h2>
     <select id="task" onchange="updateForm()">
@@ -35,8 +66,8 @@
         <option value="task4">Task 4: Eigenvalues (Power Method)</option>
         <option value="task5">Task 5: Exponential Curve Fitting</option>
         <option value="task6">Task 6: Cubic Spline Interpolation</option>
-        <option value="task7">Task 7: Picard’s Method</option>
-        <option value="task8">Task 8: Simpson’s 1/3 Rule</option>
+        <option value="task7">Task 7: Picard's Method</option>
+        <option value="task8">Task 8: Simpson's 1/3 Rule</option>
     </select>
 
     <div id="task1_form">
@@ -69,42 +100,49 @@
         <h3>Solving a System of Equations using the Relaxation Method</h3>
         <label for="matrix">Enter Matrix A:</label>
         <input type="text" id="matrix" placeholder="e.g., [[10,-1,2,0],[-1,11,-1,3],[2,-1,10,-1],[0,3,-1,8]]">
-    
+
         <label for="rhs">Enter Vector b:</label>
         <input type="text" id="rhs" placeholder="e.g., [6,25,-11,15]">
-    
+
         <label for="omega">Enter Relaxation Parameter (omega):</label>
         <input type="text" id="omega" placeholder="e.g., 1.2">
-    
+
         <button onclick="solveRelaxation()">Solve</button>
-    
-        <h3>Result:</h3>
-        <p id="result3"></p>
+
+        <div class="result-container">
+            <h3>Result:</h3>
+            <p id="result3"></p>
+            <div id="iterationTable3"></div>
+        </div>
     </div>
-    
+
     <div id="task4_form" class="hidden">
         <h3>Power Method for Eigenvalues</h3>
-        
+
         <label for="matrix_eigen">Enter Matrix A:</label>
         <input type="text" id="matrix_eigen" placeholder="e.g., [[4,1],[2,3]]">
-    
+
         <button onclick="solvePowerMethod()">Find Eigenvalue</button>
-    
-        <h3>Result:</h3>
-        <p id="result4"></p>
+
+        <div class="result-container">
+            <h3>Result:</h3>
+            <p id="result4"></p>
+            <img id="convergencePlot4" src="convergence_plot.png" alt="Convergence Plot"
+                style="max-width: 100%; margin-top: 20px;">
+        </div>
     </div>
 
-    <h3>Result:</h3>
+    <!-- <h3>Result:</h3>
     <p id="result"></p>
 
-    <img id="plot" src="plot.png" alt="Function Plot">
+    <img id="plot" src="plot.png" alt="Function Plot"> -->
 
     <script>
         function drawGraph() {
             let func = document.getElementById("function").value;
             let range = document.getElementById("range").value;
 
-            eel.plot_function(func, range)(function(response) {
+            eel.plot_function(func, range)(function (response) {
                 document.getElementById("result").innerText = response;
                 document.getElementById("plot").src = "plot.png?rand=" + Math.random(); // Refresh image
                 document.getElementById("plot").style.display = "block";
@@ -115,7 +153,7 @@
             let func = document.getElementById("function").value;
             let guesses = document.getElementById("initial_guesses").value;
 
-            eel.find_roots(func, guesses)(function(response) {
+            eel.find_roots(func, guesses)(function (response) {
                 document.getElementById("result").innerText = response;
             });
         }
@@ -126,10 +164,10 @@
             document.getElementById(selectedTask + "_form").classList.remove("hidden");
         }
 
-        function findRootsFor2Task(){
+        function findRootsFor2Task() {
             let func = document.getElementById("function2").value;
             let range = document.getElementById("range2").value;
-            eel.evaluate_methods(func, range)(function(response){
+            eel.evaluate_methods(func, range)(function (response) {
                 document.getElementById("result2").innerText = response;
             });
         }
@@ -143,9 +181,31 @@
                 let A = JSON.parse(matrix);
                 let b = JSON.parse(rhs);
 
-                eel.relaxation_method(A, b, omega)(function(response) {
-                    document.getElementById("result3").innerText = `Solution: ${JSON.stringify(response)}`;
-                    console.log(JSON.stringify(response));
+                eel.relaxation_method(A, b, omega)(function (response) {
+                    if (response.error) {
+                        document.getElementById("result3").innerText = response.error;
+                        return;
+                    }
+
+                    document.getElementById("result3").innerText = `Final Solution: ${JSON.stringify(response.solution.map(x => x.toFixed(6)))}`;
+
+                    // Create table
+                    let tableHtml = '<table><tr><th>Iteration</th>';
+                    for (let i = 0; i < response.solution.length; i++) {
+                        tableHtml += `<th>x${i + 1}</th>`;
+                    }
+                    tableHtml += '</tr>';
+
+                    response.table.forEach((row, idx) => {
+                        tableHtml += `<tr><td>${idx * 10}</td>`;
+                        row.forEach(val => {
+                            tableHtml += `<td>${val.toFixed(6)}</td>`;
+                        });
+                        tableHtml += '</tr>';
+                    });
+                    tableHtml += '</table>';
+
+                    document.getElementById("iterationTable3").innerHTML = tableHtml;
                 });
             } catch (error) {
                 document.getElementById("result3").innerText = "Error: Invalid input!";
@@ -154,7 +214,6 @@
 
         function solvePowerMethod() {
             let matrix = document.getElementById("matrix_eigen").value.trim();
-            console.log(matrix);
 
             try {
                 let A = JSON.parse(matrix);
@@ -162,20 +221,23 @@
                 if (!Array.isArray(A) || A.length === 0 || !Array.isArray(A[0])) {
                     throw new Error("Matrix A must be a two-dimensional array.");
                 }
-                console.log(A);
-                let callFunction = eel.power_method(A);
-                
-                callFunction(function(response) {
+
+                eel.power_method(A)(function (response) {
                     if (response.error) {
                         document.getElementById("result4").innerText = response.error;
-                    } else {
-                        let eigenvalue = response.eigenvalue;
-                        let eigenvector = response.eigenvector;
-                        document.getElementById("result4").innerHTML = 
-                            `<strong>Eigenvalue:</strong> ${eigenvalue.toFixed(6)}<br>
-                             <strong>Eigenvector:</strong> [${eigenvector.map(x => x.toFixed(6)).join(", ")}]<br>
-                             <strong>Iterations:</strong> ${response.iterations}`;
+                        return;
                     }
+
+                    let eigenvalue = response.eigenvalue;
+                    let eigenvector = response.eigenvector;
+
+                    document.getElementById("result4").innerHTML =
+                        `<strong>Eigenvalue:</strong> ${eigenvalue.toFixed(6)}<br>
+                         <strong>Eigenvector:</strong> [${eigenvector.map(x => x.toFixed(6)).join(", ")}]<br>
+                         <strong>Iterations:</strong> ${response.iterations}`;
+
+                    // Refresh the convergence plot
+                    document.getElementById("convergencePlot4").src = "convergence_plot.png?rand=" + Math.random();
                 });
             } catch (error) {
                 document.getElementById("result4").innerText = "Error: " + error.message;
@@ -183,4 +245,5 @@
         }
     </script>
 </body>
+
 </html>
