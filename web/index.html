@@ -82,6 +82,7 @@
         <h3>Root-Finding Methods</h3>
         <input type="text" id="function2" placeholder="Enter f(x)">
         <input type="text" id="range2" placeholder="Interval (e.g., 0,3)">
+        <input type="text" id="dfunc" placeholder="Enter df(x)">
         <button onclick="findRootsFor2Task()">Find Roots</button>
         <p id="result2"></p>
     </div>
@@ -214,7 +215,8 @@
         function findRootsFor2Task() {
             let func = document.getElementById("function2").value;
             let range = document.getElementById("range2").value;
-            eel.evaluate_methods(func, range)(function (response) {
+            let dfunc= document.getElementById("dfunc").value;
+            eel.evaluate_methods(func, range, dfunc)(function (response) {
                 document.getElementById("result2").innerText = response;
             });
         }
