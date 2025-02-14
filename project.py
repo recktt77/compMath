@@ -84,17 +84,16 @@ def bisection_method(f, a, b, tol):
 
     return midpoint, iterBi
 
-def secant_method(f, x0, x1, tol):
-    x1 = x1 + 0.01
-    iterSe = 0
-    while abs(f(x1)) > tol:
-        iterSe += 1
-        x_temp = x1 - f(x1) * (x1 - x0) / (f(x1) - f(x0))
-        x0, x1 = x1, x_temp
-    return x1, iterSe
+def newton_raphson(f, df, x0, tol):
+    x = x0
+    iterN=0
+    while abs(f(x)) > tol:
+        iterN+=1
+        x = x - f(x) / df(x)  
+    return x, iterN
 
 @eel.expose
-def evaluate_methods(func_str, x_range):
+def evaluate_methods(func_str, x_range, dfunc):
     x = sp.symbols('x')
     try:
         func_expr = sp.sympify(func_str)
@@ -104,9 +103,9 @@ def evaluate_methods(func_str, x_range):
         return "error: incorrect function or range"
 
     rootBi, iterBi = bisection_method(f, x_min, x_max, 1e-6)
-    rootSe, iterSe = secant_method(f, x_min, x_max, 1e-6)
+    rootSe, iterSe = newton_raphson(f, dfunc, x_max, 1e-6)
 
-    return f"Approx root bisection: {rootBi}, Iterations: {iterBi} | Approx root secant: {rootSe}, Iterations: {iterSe}"
+    return f"Approx root bisection: {rootBi}, Iterations: {iterBi} | Approx root newton_raphson: {rootSe}, Iterations: {iterSe}"
 
 @eel.expose
 def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
