@@ -6,14 +6,16 @@ from scipy.optimize import fsolve
 from scipy.interpolate import CubicSpline
 import eel
 
+# Initialize Eel with folder 'web'
 eel.init('web')
 
 ######################################################
-#  ИСХОДНЫЕ ЗАДАНИЯ (1-4)
+#  INITIAL TASKS (1-4)
 ######################################################
 
 @eel.expose
 def plot_function(func_str, x_range):
+    # Plots a given function in the specified x-range
     try:
         x_min, x_max = map(float, x_range.split(','))
     except ValueError:
@@ -47,6 +49,7 @@ def plot_function(func_str, x_range):
 
 @eel.expose
 def find_roots(func_str, app_guess):
+    # Finds roots numerically using fsolve
     x = sp.symbols('x')
     try:
         func_expr = sp.sympify(func_str)
@@ -65,8 +68,9 @@ def find_roots(func_str, app_guess):
     return f"found roots: {roots.tolist()}, apsolute error: {absolute_errors}"
 
 def bisection_method(f, a, b, tol):
+    # Bisection method
     iterBi = 0
-    b = b + 0.01  # небольшая прибавка
+    b = b + 0.01  # small offset
     if f(a) * f(b) >= 0:
         return "Invalid initial values. f(a) and f(b) must be of different signs.", iterBi
 
@@ -82,6 +86,7 @@ def bisection_method(f, a, b, tol):
     return midpoint, iterBi
 
 def secant_method(f, x0, x1, tol):
+    # Secant method
     x1 = x1 + 0.01
     iterSe = 0
     while abs(f(x1)) > tol:
@@ -92,6 +97,7 @@ def secant_method(f, x0, x1, tol):
 
 @eel.expose
 def evaluate_methods(func_str, x_range):
+    # Compares bisection and secant methods
     x = sp.symbols('x')
     try:
         func_expr = sp.sympify(func_str)
@@ -107,6 +113,7 @@ def evaluate_methods(func_str, x_range):
 
 @eel.expose
 def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
+    # Relaxation method (SOR) for solving linear systems
     A = np.array(A, dtype=float)
     b = np.array(b, dtype=float)
     x0 = np.zeros(len(b))
@@ -131,6 +138,7 @@ def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
 
         x = x_new
 
+    # Store partial iteration results (step of 10)
     table_filtered = [table[i] for i in range(0, len(table), 10)]
 
     return {
@@ -141,6 +149,7 @@ def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
 
 @eel.expose
 def power_method(A, v0=None, tol=1e-6, max_iter=100):
+    # Power method to find dominant eigenvalue and eigenvector
     try:
         A = np.array(A, dtype=float)
         if A.shape[0] != A.shape[1]:
@@ -171,7 +180,7 @@ def power_method(A, v0=None, tol=1e-6, max_iter=100):
             iteration_count += 1
 
             if np.linalg.norm(v_new - v) < tol:
-                # Plot convergence
+                # Plot eigenvalue convergence
                 plt.figure(figsize=(8, 6))
                 plt.plot(range(1, len(eigenvalue_history) + 1), eigenvalue_history, 'b-')
                 plt.xlabel('Iteration')
@@ -190,7 +199,7 @@ def power_method(A, v0=None, tol=1e-6, max_iter=100):
 
             v = v_new
 
-        # Если превысили max_iter
+        # If max_iter exceeded
         plt.figure(figsize=(8, 6))
         plt.plot(range(1, len(eigenvalue_history) + 1), eigenvalue_history, 'b-')
         plt.xlabel('Iteration')
@@ -210,14 +219,14 @@ def power_method(A, v0=None, tol=1e-6, max_iter=100):
         return {"error": f"error: {str(e)}"}
 
 ######################################################
-#  НОВЫЕ ЗАДАНИЯ (5-8) ДЛЯ ВАРИАНТА 3
+#  NEW TASKS (5-8) FOR VARIANT 3
 ######################################################
 
 # 5) Exponential Curve Fitting
 @eel.expose
 def exponential_curve_fitting(x_data_str, y_data_str):
     """
-    Задание 5: Экспоненциальная аппроксимация вида y = a*e^(b*x).
+    Task 5: Exponential approximation y = a * e^(b*x).
     """
     try:
         x_values = list(map(float, x_data_str.split(',')))
@@ -228,7 +237,7 @@ def exponential_curve_fitting(x_data_str, y_data_str):
         X = np.array(x_values, dtype=float)
         Y = np.array(y_values, dtype=float)
 
-        # Проверяем, что все Y > 0 (для ln(Y))
+        # Check if Y > 0
         if np.any(Y <= 0):
             return {"error": "Все y должны быть > 0 для экспоненциальной аппроксимации"}
 
@@ -243,7 +252,7 @@ def exponential_curve_fitting(x_data_str, y_data_str):
         ln_a = (sum_lnY - b * sum_x) / n
         a = np.exp(ln_a)
 
-        # Построение графика
+        # Plot the fitted curve
         x_fit = np.linspace(min(X), max(X), 100)
         y_fit = a * np.exp(b * x_fit)
 
@@ -274,7 +283,7 @@ def exponential_curve_fitting(x_data_str, y_data_str):
 @eel.expose
 def cubic_spline_interpolation(x_data_str, y_data_str, eval_points_str):
     """
-    Задание 6: Кубическая сплайновая интерполяция.
+    Task 6: Cubic spline interpolation.
     """
     try:
         x_vals = np.array(list(map(float, x_data_str.split(','))))
@@ -283,14 +292,14 @@ def cubic_spline_interpolation(x_data_str, y_data_str, eval_points_str):
         if len(x_vals) != len(y_vals):
             return {"error": "Число точек x и y не совпадает"}
 
-        # Создаём кубический сплайн
+        # Build cubic spline
         cs = CubicSpline(x_vals, y_vals)
 
-        # Точки, в которых вычисляем сплайн
+        # Evaluate at given points
         eval_points = np.array(list(map(float, eval_points_str.split(','))))
         spline_values = cs(eval_points)
 
-        # График
+        # Prepare a dense range for plotting
         x_min, x_max = np.min(x_vals), np.max(x_vals)
         x_dense = np.linspace(x_min, x_max, 200)
         y_dense = cs(x_dense)
@@ -322,19 +331,19 @@ def cubic_spline_interpolation(x_data_str, y_data_str, eval_points_str):
     except Exception as e:
         return {"error": str(e)}
 
-# 7) Picard’s Method (для y' = x + y, y(0)=1)
+# 7) Picard’s Method
 @eel.expose
 def picard_method_picard_approx():
     """
-    Задание 7: Метод Пикара для y'(x)=x + y, y(0)=1,
-    найти до 4-го приближения и y(0.2).
+    Task 7: Picard Method for y'(x)=x + y, y(0)=1.
+    Compute up to 4th approximation and evaluate at x=0.2.
     """
     try:
         x = sp.Symbol('x', real=True)
-        # Начальное приближение: y0(x)=1
+        # Initial approx: y0(x)=1
         y_approx = [sp.Integer(1)]
 
-        # Формула: y_{n+1}(x) = 1 + \int_0^x [t + y_n(t)] dt
+        # Recurrence: y_{n+1}(x) = 1 + ∫[0->x] [t + y_n(t)] dt
         t = sp.Symbol('t', real=True)
         num_steps = 4
         for _ in range(num_steps):
@@ -344,7 +353,6 @@ def picard_method_picard_approx():
             y_approx.append(sp.simplify(next_func))
 
         final_approx = y_approx[-1]
-        # Найдём значение в x=0.2
         val_02 = final_approx.subs(x, 0.2)
         val_02_float = float(val_02.evalf())
 
@@ -365,7 +373,7 @@ def picard_method_picard_approx():
 @eel.expose
 def simpson_one_third_rule(func_str, a_str, b_str, n_str):
     """
-    Задание 8: Метод Симпсона (1/3) для численного интегрирования.
+    Task 8: Simpson's 1/3 rule for numerical integration.
     """
     try:
         a = float(a_str)
@@ -405,7 +413,7 @@ def simpson_one_third_rule(func_str, a_str, b_str, n_str):
 
 
 ######################################################
-# Запуск приложения Eel
+# Start Eel application
 ######################################################
 def start_app():
     eel.start('index.html', size=(800, 600))

@@ -51,7 +51,7 @@
         <option value="task2">Task 2: Root-Finding Methods</option>
         <option value="task3">Task 3: Relaxation Method</option>
         <option value="task4">Task 4: Power Method (Eigenvalues)</option>
-        <!-- Новые задания 5–8 -->
+        <!-- New tasks 5–8 -->
         <option value="task5">Task 5: Exponential Curve Fitting</option>
         <option value="task6">Task 6: Cubic Spline Interpolation</option>
         <option value="task7">Task 7: Picard's Method</option>
@@ -182,7 +182,7 @@
     </div>
 
     <script>
-        // Переключение видимости форм
+        // Toggle form visibility based on selected task
         function updateForm() {
             document.querySelectorAll("div[id$='_form']").forEach(div => div.classList.add("hidden"));
             let selectedTask = document.getElementById("task").value;
@@ -235,7 +235,7 @@
                     document.getElementById("result3").innerText =
                         `Final Solution: ${JSON.stringify(response.solution.map(x => x.toFixed(6)))}`;
 
-                    // Создаём таблицу
+                    // Create a table for partial iterations
                     let tableHtml = '<table><tr><th>Iteration</th>';
                     for (let i = 0; i < response.solution.length; i++) {
                         tableHtml += `<th>x${i + 1}</th>`;
@@ -279,7 +279,7 @@
                          <strong>Eigenvector:</strong> [${eigenvector.map(x => x.toFixed(6)).join(", ")}]<br>
                          <strong>Iterations:</strong> ${iter}`;
 
-                    // Обновим график (если был сохранён)
+                    // Update the plot if saved
                     document.getElementById("convergencePlot4").src = "convergence_plot.png?rand=" + Math.random();
                 });
             } catch (error) {
@@ -318,7 +318,7 @@
                     document.getElementById("task6_result").innerText = "Error: " + resp.error;
                     document.getElementById("task6_plot").style.display = "none";
                 } else {
-                    // Выведем значения
+                    // Display the values
                     let txt = "Spline values:<br>";
                     resp.values.forEach(obj => {
                         txt += `x=${obj.x} -> y=${obj.y.toFixed(6)}<br>`;
