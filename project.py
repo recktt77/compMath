@@ -11,10 +11,6 @@ import re
 
 eel.init('web')
 
-######################################################
-#  ИСХОДНЫЕ ЗАДАНИЯ (1-4)
-######################################################
-
 @eel.expose
 def plot_function(func_str, x_range):
     try:
@@ -67,45 +63,97 @@ def find_roots(func_str, app_guess):
 
     return f"found roots: {roots.tolist()}, apsolute error: {absolute_errors}"
 
-def bisection_method(f, a, b, tol):
-    iterBi = 0
-    b = b + 0.01  # небольшая прибавка
-    if f(a) * f(b) >= 0:
-        return "Invalid initial values. f(a) and f(b) must be of different signs.", iterBi
 
-    midpoint = (a + b) / 2
+def calculate_errors(true_value, approx_value):
+    true_value = float(true_value)
+    approx_value = float(approx_value)
+    absolute_error = abs(true_value - approx_value)  # Absolute error
+    relative_error = absolute_error / abs(true_value) if true_value != 0 else float('inf')
+    return relative_error
+
+# Newton-Raphson method implementation.
+def newton_raphson(f, df, x0, tol, max_iter=100):
+    x_n = x0
+    for i in range(max_iter):
+        f_xn = f(x_n)
+        df_xn = df(x_n)
+        if df_xn == 0:
+            return None, i  # Derivative zero, cannot proceed.
+        x_next = x_n - f_xn / df_xn
+        if abs(x_next - x_n) < tol:
+            return x_next, i + 1
+        x_n = x_next
+    return x_n, max_iter
+
+# Example bisection method; you should have your own definition.
+def bisection_method(f, a, b, tol):
+    iter_count = 0
+    # A slight adjustment on b in case f(b) is exactly zero.
+    b = b + 0.01  
+    if f(a) * f(b) >= 0:
+        return None, iter_count
+    midpoint = (a + b) / 2.0
     while abs(f(midpoint)) > tol:
-        iterBi += 1
+        iter_count += 1
         if f(a) * f(midpoint) < 0:
             b = midpoint
         else:
             a = midpoint
-        midpoint = (a + b) / 2
-
-    return midpoint, iterBi
-
-def newton_raphson(f, df, x0, tol):
-    x = x0
-    iterN=0
-    while abs(f(x)) > tol:
-        iterN+=1
-        x = x - f(x) / df(x)  
-    return x, iterN
+        midpoint = (a + b) / 2.0
+    return midpoint, iter_count
 
 @eel.expose
-def evaluate_methods(func_str, x_range, dfunc):
+def evaluate_methods(func_str, x_range, dfunc_str):
     x = sp.symbols('x')
     try:
+        # fuction parsing
         func_expr = sp.sympify(func_str)
         f = sp.lambdify(x, func_expr, "numpy")
         x_min, x_max = map(float, x_range.split(','))
     except (sp.SympifyError, ValueError):
         return "error: incorrect function or range"
-
+    
+    try:
+        # function parsing
+        dfunc_expr = sp.sympify(dfunc_str)
+        dfunc = sp.lambdify(x, dfunc_expr, "numpy")
+    except (sp.SympifyError, ValueError):
+        return "error: incorrect derivative function"
+    
+    # solutions
+    try:
+        solutions = sp.solve(sp.Eq(func_expr, 0), x, dict=False)
+    except Exception as e:
+        return f"Error solving symbolically: {str(e)}"
+    
+    # roots in range
+    solutions_in_range = []
+    for sol in solutions:
+        sol_val = float(sol.evalf())
+        if x_min <= sol_val <= x_max:
+            solutions_in_range.append(sol_val)
+    
+    if not solutions_in_range:
+        return "there is no roots."
+    
+    # bisection method
     rootBi, iterBi = bisection_method(f, x_min, x_max, 1e-6)
-    rootSe, iterSe = newton_raphson(f, dfunc, x_max, 1e-6)
-
-    return f"Approx root bisection: {rootBi}, Iterations: {iterBi} | Approx root newton_raphson: {rootSe}, Iterations: {iterSe}"
+    # newton raphson method
+    rootSe, iterSe = newton_raphson(f, dfunc, x_min, 1e-6)
+    
+    # chousen root
+    true_solution = min(solutions_in_range, key=lambda sol: abs(sol - rootBi))
+    
+    # relative error
+    relative_errorBi = calculate_errors(true_solution, rootBi)
+    relative_errorSe = calculate_errors(true_solution, rootSe)
+    
+    return (
+        f"roots: {solutions_in_range}\n"
+        f"chousen root: {true_solution}\n"
+        f"bisection method: {rootBi},\n iterations: {iterBi}, \n relative error: {relative_errorBi}\n"
+        f"newton raphson method: {rootSe},\n iterations: {iterSe}, \n relative error: {relative_errorSe}"
+    )
 
 @eel.expose
 def relaxation_method(A, b, omega, tol=1e-6, max_iter=100):
@@ -211,9 +259,6 @@ def power_method(A, v0=None, tol=1e-6, max_iter=100):
     except Exception as e:
         return {"error": f"error: {str(e)}"}
 
-######################################################
-#  НОВЫЕ ЗАДАНИЯ (5-8) ДЛЯ ВАРИАНТА 3
-######################################################
 
 # 5) Exponential Curve Fitting
 def parse_value(val_str):
@@ -432,9 +477,6 @@ def simpson_one_third_rule(func_str, a_str, b_str, n_str):
         return {"error": str(e)}
 
 
-######################################################
-# Запуск приложения Eel
-######################################################
 def start_app():
     eel.start('index.html', size=(800, 600))
 
